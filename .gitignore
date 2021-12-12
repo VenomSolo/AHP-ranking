@@ -1,0 +1,6 @@
+.vs
+.vscode
+AHP
+__pycache__
+*.txt
+*zip
