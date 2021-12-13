@@ -1,4 +1,4 @@
-
+from collections import OrderedDict
 class Category:
     def __init__(self,name,depth):
         self.cat_name=name
@@ -126,7 +126,7 @@ class File_Processor:
         file_data=file.read(-1)
         position=0
         titles=[]
-        while (position < len(file_data)):
+        while position < len(file_data):
             if file_data[position] == "!":
                 position += 1
                 found_title, position = self.get_rest_of_line(position, file_data)
@@ -135,6 +135,41 @@ class File_Processor:
         file.close()
         return titles
 
+    def SendForm(self,title,expert_name,dict):
+        file = open(title + "_result.txt", "a+")
+        file.close()
+
+        file = open(title + "_result.txt", "r")
+        file_data=file.read(-1)
+        position=0
+        while (position < len(file_data)):
+            if file_data[position]=="$":
+                found_expert, position = self.get_rest_of_line(position, file_data)
+                if found_expert==expert_name:
+                    return
+            position+=1
+        file.close()
+        file=open(title+"_result.txt","a")
+        file.write("$"+expert_name+"\n")
+        for key in test_dict:
+            val=test_dict[key]
+            for i in range(int(key[1])):
+                file.write("#")
+            file.write(key[0]+"\n")
+            file.write(str(val)+"\n")
+
+        file.close()
+
+    def ReadFormAnswer(self,title):
+        file = open(title + "_result.txt", "r")
+        file_data = file.read(-1)
+        position = 0
+        while (position < len(file_data)):
+            if file_data[position]=="$":
+                found_expert, position = self.get_rest_of_line(position, file_data)
+
+            position+=1
+        file.close()
 if __name__ == '__main__':
     processor=File_Processor("test.txt")
     #taken_alt,taken_cat=processor.TakeForm("Bruh")
@@ -148,4 +183,16 @@ if __name__ == '__main__':
     test_cat.append(Category("test2", 1))
     test_cat.append(Category("test3", 1))
     # processor.AddForm("Bruh2",["a","b","bazinga"],test_cat)
-    processor.RemoveForm("Bruh")
+    #processor.RemoveForm("Bruh")
+
+    test_dict=OrderedDict()
+    test_dict[("albania",1)]=[("safety",0.3),("chill",0.5),("poverty",0.2)]
+    test_dict[("safety", 2)] = [("police", 0.3), ("army", 0.2), ("laws", 0.5)]
+    test_dict[("romania", 1)] = [("safety",0.1),("chill",0.3),("poverty",0.6)]
+    test_expert="Ekspert"
+    test_title="expert_test"
+
+
+    #print(test_dict)
+    processor.SendForm(test_title,test_expert,test_dict)
+
