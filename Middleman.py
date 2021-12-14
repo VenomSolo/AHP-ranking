@@ -22,3 +22,6 @@ def criterias_to_Categories(hierarchy, criterias):
         add_sub(Categories[criteria], criteria)
 
     return Categories.values()
+
+def Categories_to_criterias(categories):
+    return

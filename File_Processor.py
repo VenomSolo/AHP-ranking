@@ -1,4 +1,6 @@
 from collections import OrderedDict
+import ast
+
 class Category:
     def __init__(self,name,depth):
         self.cat_name=name
@@ -164,12 +166,32 @@ class File_Processor:
         file = open(title + "_result.txt", "r")
         file_data = file.read(-1)
         position = 0
+        result=[]
+
         while (position < len(file_data)):
             if file_data[position]=="$":
                 found_expert, position = self.get_rest_of_line(position, file_data)
+                categorie_dict = OrderedDict()
+                position+=1
+                while position < len(file_data) and file_data[position] == "#":
+                    depth = 0
+                    cat=""
+                    while file_data[position] == "#":
+                        depth += 1
+                        position += 1
 
+                    cat, position = self.get_rest_of_line(position, file_data)
+                    position += 1
+                    form_result,position = self.get_rest_of_line(position,file_data)
+                    position+=1
+                    categorie_dict[(cat,depth)]=ast.literal_eval(form_result)
+                position-=1
+                result.append((found_expert,categorie_dict))
             position+=1
+
         file.close()
+        return result
+
 if __name__ == '__main__':
     processor=File_Processor("test.txt")
     #taken_alt,taken_cat=processor.TakeForm("Bruh")
@@ -194,5 +216,7 @@ if __name__ == '__main__':
 
 
     #print(test_dict)
-    processor.SendForm(test_title,test_expert,test_dict)
+    #processor.SendForm(test_title,test_expert,test_dict)
+    test_result=processor.ReadFormAnswer(test_title)
+    print(test_result)
 
