@@ -1,6 +1,9 @@
 from collections import OrderedDict
 import ast
 
+import Middleman
+
+
 class Category:
     def __init__(self,name,depth):
         self.cat_name=name
@@ -206,6 +209,8 @@ if __name__ == '__main__':
     test_cat.append(Category("test3", 1))
     # processor.AddForm("Bruh2",["a","b","bazinga"],test_cat)
     #processor.RemoveForm("Bruh")
+    test_midman=Middleman.Categories_to_criterias(test_cat)
+    print(test_midman)
 
     test_dict=OrderedDict()
     test_dict[("albania",1)]=[("safety",0.3),("chill",0.5),("poverty",0.2)]
@@ -217,6 +222,6 @@ if __name__ == '__main__':
 
     #print(test_dict)
     #processor.SendForm(test_title,test_expert,test_dict)
-    test_result=processor.ReadFormAnswer(test_title)
-    print(test_result)
+    # test_result=processor.ReadFormAnswer(test_title)
+    # print(test_result)
 

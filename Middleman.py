@@ -24,4 +24,15 @@ def criterias_to_Categories(hierarchy, criterias):
     return Categories.values()
 
 def Categories_to_criterias(categories):
-    return
+    def iterate_through_subcategorie(list,categorie):
+        list.append((categorie.depth,categorie.GetName()))
+        for sub_category in categorie.subcategories:
+            iterate_through_subcategorie(list,sub_category)
+
+    criterias=[]
+    for categorie in categories:
+        iterate_through_subcategorie(criterias,categorie)
+
+
+
+    return criterias
