@@ -1,6 +1,9 @@
 import numpy as np
 from numpy.core.numeric import convolve
 import os
+from enum import Enum
+import File_Processor as fp
+import Middleman as md
 
 from numpy.lib.index_tricks import nd_grid
 
@@ -8,6 +11,15 @@ clear = lambda: os.system('cls' if os.name == 'nt' else 'clear')
 
 criteria_matrixes = []
 eigenvectors = []
+
+
+class Method(Enum):
+    EVM = 1,
+    GMM = 2
+
+
+def input_title():
+    return input("Podaj tytul: ")
 
 
 def input_alternatives():
@@ -112,7 +124,21 @@ def ask_for_CCM(criterias):
 
 def normalized_eigenvector(comparison_matrix):
     w, v = np.linalg.eig(comparison_matrix)
-    return v[:, 0] / np.linalg.norm(v[:, 0], ord=1)
+    return normalize_vector(v[0])
+
+
+def normalized_geometry_mean(comparison_matrix):
+    alt_count = len(comparison_matrix)
+    ranking = np.ones(shape=(1, alt_count), dtype=complex)
+    for row in range(alt_count):
+        for val in row:
+            ranking[0, row] *= val
+        ranking[0, row] **= (1 / alt_count)
+    return normalize_vector(ranking[0])
+
+
+def normalize_vector(vector):
+    return vector / np.linalg.norm(vector, ord=1)
 
 
 def rank_flat(ccm_eigenvector, acm_eigenvectors):
@@ -125,7 +151,7 @@ def rank_flat(ccm_eigenvector, acm_eigenvectors):
         for a in range(alt_count):
             ranking[0, a] += abs(scaled_vector[a])
 
-    return ranking
+    return ranking[0]
 
 
 def gather_data(alternatives, hierarchy):
@@ -136,38 +162,86 @@ def gather_data(alternatives, hierarchy):
                 ask_for_ACM(alternatives, criteria))
     for (criteria, children) in hierarchy.items():
         if children != []:
-            results[criteria + "_sub"] = normalized_eigenvector(
-                ask_for_CCM(children))
+            results[criteria] = normalized_eigenvector(ask_for_CCM(children))
     print(results)
     return results
 
 
+def rank_data(data, method):
+    for (criteria, result) in data:
+        if method == Method.EVM:
+            data[criteria] = normalized_eigenvector(result)
+        if method == Method.GMM:
+            data[criteria] = normalized_geometry_mean(result)
+
+
 def _rank_hierarchy(alternatives, hierarchy, criteria, data):
-    print(criteria)
     subcriteria = hierarchy[criteria]
     if subcriteria == []:
         return data[criteria]
 
-    subcriteria_priority = data[criteria + "_sub"]
-    subcriteria_eigenvector = normalized_eigenvector(subcriteria_priority)
+    subcriteria_priority = data[criteria]
 
     alt_count = len(alternatives)
     subcrit_count = len(subcriteria)
     ranking = np.zeros(shape=(1, alt_count), dtype=complex)
+
     for i in range(alt_count):
-
         for j in range(subcrit_count):
-            res = _rank_hierarchy(alternatives, hierarchy, subcriteria[j],
-                                  data)
-            #print(res)
-            ranking[0, i] += (subcriteria_eigenvector[j] * res[i])
-    print("ranking", ranking)
-    return ranking[0]
+            result = _rank_hierarchy(alternatives, hierarchy, subcriteria[j],
+                                     data)
+            ranking[0, i] += (subcriteria_priority[j] * result[i])
 
+    return ranking[0]
     pass
 
 
-def rank_hierarchy(alternatives, criterias):
+def create_proc(server):
+    return fp.File_Processor(server)
+
+
+def rank_hierarchy(alternatives, criterias, method):
     hierarchy = create_hierarchy(criterias)
     data = gather_data(alternatives, hierarchy)
-    return _rank_hierarchy(alternatives, hierarchy, 0, data)
+    ranked_data = rank_data(data, method)
+    return _rank_hierarchy(alternatives, hierarchy, 0, ranked_data)
+
+
+def check_forms(server):
+    f_processor = create_proc(server)
+    return f_processor.CheckForms()
+
+
+def take_form(server, title, username):
+    f_processor = create_proc(server)
+    (alt, cat) = f_processor.TakeForm(title)
+    criterias = md.Categories_to_criterias(cat)
+    hierarchy = create_hierarchy(criterias)
+    data = gather_data(alt, hierarchy)
+    data_with_depth = {}
+    #print(data)
+    for (criteria, result) in data.items():
+        for crit in criterias:
+            if crit[1] == criteria:
+                data_with_depth[(criteria, crit[0])] = result
+    f_processor.SendForm(title, username, data_with_depth)
+    return
+
+
+def add_form(server, title):
+    f_processor = create_proc(server)
+    f_processor.AddForm(title, input_alternatives(),
+                        md.criterias_to_Categories(input_criteria()))
+
+
+def remove_form(server, title):
+    f_processor = create_proc(server)
+    f_processor.RemoveForm(title)
+
+
+def read_form(server, title):
+    f_processor = create_proc(server)
+    answers = f_processor.ReadFormAnswer(title)
+    for (expert, result) in answers:
+        print(expert + ":")
+        print(result)
