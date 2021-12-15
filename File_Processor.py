@@ -168,11 +168,15 @@ class File_Processor:
         file = open(title + "_result.txt", "a")
         file.write("$" + expert_name + "\n")
         for key in dict:
-            val = dict[key]
-            for i in range(int(key[1])):
-                file.write("#")
-            file.write(key[0] + "\n")
-            file.write(str(val) + "\n")
+            if key== ("0",0):
+                val=dict[key]
+                file.write(str(val)+"\n")
+            else:
+                val = dict[key]
+                for i in range(int(key[1])):
+                    file.write("#")
+                file.write(key[0] + "\n")
+                file.write(str(val) + "\n")
 
         file.close()
 
@@ -187,7 +191,12 @@ class File_Processor:
                 found_expert, position = self.get_rest_of_line(
                     position, file_data)
                 categorie_dict = OrderedDict()
+
                 position += 1
+                cat_res, position=self.get_rest_of_line(position,file_data)
+                categorie_dict[("0", 0)] = ast.literal_eval(cat_res)
+
+                position+=1
                 while position < len(file_data) and file_data[position] == "#":
                     depth = 0
                     cat = ""
