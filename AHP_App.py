@@ -1,3 +1,4 @@
+from typing import OrderedDict
 import numpy as np
 from numpy.core.numeric import convolve
 import os
@@ -158,11 +159,10 @@ def gather_data(alternatives, hierarchy):
     results = {}
     for (criteria, children) in hierarchy.items():
         if children == []:
-            results[criteria] = normalized_eigenvector(
-                ask_for_ACM(alternatives, criteria))
+            results[criteria] = ask_for_ACM(alternatives, criteria).tolist()
     for (criteria, children) in hierarchy.items():
         if children != []:
-            results[criteria] = normalized_eigenvector(ask_for_CCM(children))
+            results[criteria] = ask_for_CCM(children).tolist()
     print(results)
     return results
 
@@ -218,20 +218,25 @@ def take_form(server, title, username):
     criterias = md.Categories_to_criterias(cat)
     hierarchy = create_hierarchy(criterias)
     data = gather_data(alt, hierarchy)
-    data_with_depth = {}
+    print(criterias)
+    data_with_depth = OrderedDict()
     #print(data)
+    data_with_depth[("0", 0)] = data[0]
     for (criteria, result) in data.items():
         for crit in criterias:
             if crit[1] == criteria:
                 data_with_depth[(criteria, crit[0])] = result
+    print(data_with_depth)
     f_processor.SendForm(title, username, data_with_depth)
     return
 
 
 def add_form(server, title):
     f_processor = create_proc(server)
-    f_processor.AddForm(title, input_alternatives(),
-                        md.criterias_to_Categories(input_criteria()))
+    alt = input_alternatives()
+    crit = input_criteria()
+    hier = create_hierarchy(crit)
+    f_processor.AddForm(title, alt, md.criterias_to_Categories(hier, crit))
 
 
 def remove_form(server, title):

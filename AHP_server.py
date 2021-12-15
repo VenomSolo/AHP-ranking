@@ -1,6 +1,6 @@
 import AHP_App
 
-available_commands = ["help", "add", "remove", "check", "read"]
+available_commands = ["help", "add", "remove", "check", "read", "quit"]
 comm_dict = {
     "help": lambda x: Help(x),
     "check": lambda x: CheckForms(x),
