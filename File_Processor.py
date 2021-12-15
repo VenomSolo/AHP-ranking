@@ -159,6 +159,7 @@ class File_Processor:
         position = 0
         while (position < len(file_data)):
             if file_data[position] == "$":
+                position += 1
                 found_expert, position = self.get_rest_of_line(
                     position, file_data)
                 if found_expert == expert_name:
