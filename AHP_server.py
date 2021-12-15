@@ -1,12 +1,13 @@
 import AHP_App
 
-available_commands = ["help", "add", "remove", "check", "read", "quit"]
+available_commands = ["help", "add", "remove", "check", "read", "quit", "rank"]
 comm_dict = {
     "help": lambda x: Help(x),
     "check": lambda x: CheckForms(x),
     "add": lambda x: AddForm(x),
     "remove": lambda x: RemoveForm(x),
     "read": lambda x: ReadForm(x),
+    "rank": lambda x: RankForm(x),
     "quit": lambda x: quit()
 }
 
@@ -38,6 +39,12 @@ def ReadForm(args):
     if not _check_arg_number(args, 1):
         return
     AHP_App.read_form(server, args[0])
+
+
+def RankForm(args):
+    if not _check_arg_number(args, 2):
+        return
+    AHP_App.rank_form(server, args[0], args[1])
 
 
 def Help(args):

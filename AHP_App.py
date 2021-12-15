@@ -19,6 +19,9 @@ class Method(Enum):
     GMM = 2
 
 
+methods = {"EVM": Method.EVM, "GMM": Method.GMM}
+
+
 def input_title():
     return input("Podaj tytul: ")
 
@@ -81,7 +84,6 @@ def create_hierarchy(criterias):
     hierarchy = {name: [] for (_depth, name) in criterias}
     hierarchy[0] = []
 
-    print(criterias)
     for i in range(len(criterias)):
         depth, name = criterias[i]
         hierarchy[find_parent(depth, i)].append(name)
@@ -125,14 +127,14 @@ def ask_for_CCM(criterias):
 
 def normalized_eigenvector(comparison_matrix):
     w, v = np.linalg.eig(comparison_matrix)
-    return normalize_vector(v[0])
+    return normalize_vector(v[:, 0])
 
 
 def normalized_geometry_mean(comparison_matrix):
     alt_count = len(comparison_matrix)
     ranking = np.ones(shape=(1, alt_count), dtype=complex)
     for row in range(alt_count):
-        for val in row:
+        for val in comparison_matrix[row]:
             ranking[0, row] *= val
         ranking[0, row] **= (1 / alt_count)
     return normalize_vector(ranking[0])
@@ -163,12 +165,11 @@ def gather_data(alternatives, hierarchy):
     for (criteria, children) in hierarchy.items():
         if children != []:
             results[criteria] = ask_for_CCM(children).tolist()
-    print(results)
     return results
 
 
 def rank_data(data, method):
-    for (criteria, result) in data:
+    for (criteria, result) in data.items():
         if method == Method.EVM:
             data[criteria] = normalized_eigenvector(result)
         if method == Method.GMM:
@@ -200,11 +201,10 @@ def create_proc(server):
     return fp.File_Processor(server)
 
 
-def rank_hierarchy(alternatives, criterias, method):
+def rank_hierarchy(alternatives, criterias, data, method):
     hierarchy = create_hierarchy(criterias)
-    data = gather_data(alternatives, hierarchy)
-    ranked_data = rank_data(data, method)
-    return _rank_hierarchy(alternatives, hierarchy, 0, ranked_data)
+    rank_data(data, method)
+    return _rank_hierarchy(alternatives, hierarchy, 0, data)
 
 
 def check_forms(server):
@@ -218,7 +218,6 @@ def take_form(server, title, username):
     criterias = md.Categories_to_criterias(cat)
     hierarchy = create_hierarchy(criterias)
     data = gather_data(alt, hierarchy)
-    print(criterias)
     data_with_depth = OrderedDict()
     #print(data)
     data_with_depth[("0", 0)] = data[0]
@@ -226,7 +225,6 @@ def take_form(server, title, username):
         for crit in criterias:
             if crit[1] == criteria:
                 data_with_depth[(criteria, crit[0])] = result
-    print(data_with_depth)
     f_processor.SendForm(title, username, data_with_depth)
     return
 
@@ -247,6 +245,33 @@ def remove_form(server, title):
 def read_form(server, title):
     f_processor = create_proc(server)
     answers = f_processor.ReadFormAnswer(title)
-    for (expert, result) in answers:
-        print(expert + ":")
-        print(result)
+    # for (expert, result) in answers:
+    # print(expert + ":")
+    # print(result)
+
+
+def rank_form(server, title, method):
+    f_processor = create_proc(server)
+    expert_data_list = f_processor.ReadFormAnswer(title)
+    expert_data = {}
+    for (expert, data) in expert_data_list:
+        corrected_dict = {}
+        for (key, val) in data.items():
+            if key[0] == "0":
+                corrected_dict[0] = val
+            else:
+                corrected_dict[key[0]] = val
+        expert_data[expert] = corrected_dict
+    (alt, cat) = f_processor.TakeForm(title)
+    criterias = md.Categories_to_criterias(cat)
+    # print(
+    # rank_hierarchy(alt, criterias, expert_data["$venom"], methods[method]))
+
+    results = np.zeros(shape=(len(alt), len(expert_data.keys())),
+                       dtype=complex)
+    i = 0
+    for (expert, data) in expert_data.items():
+        results[:, i] = rank_hierarchy(alt, criterias, data, methods[method])
+        i += 1
+
+    print(normalized_geometry_mean(results))
