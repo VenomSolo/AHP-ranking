@@ -127,11 +127,14 @@ def ask_for_CCM(criterias):
 
 def normalized_eigenvector(comparison_matrix):
     w, v = np.linalg.eig(comparison_matrix)
-    return normalize_vector(v[:, 0])
+    #print(v, v[:, 0])
+    return normalize_vector(np.abs(v[:, 0]))
+
 
 def consistency_index(comparison_matrix):
-    w= np.linalg.eigvals(comparison_matrix)
-    return (max(w)-len(comparison_matrix))/(len(comparison_matrix)-1)
+    w = np.linalg.eigvals(comparison_matrix)
+    return (max(w) - len(comparison_matrix)) / (len(comparison_matrix) - 1)
+
 
 def normalized_geometry_mean(comparison_matrix):
     alt_count = len(comparison_matrix)
@@ -195,6 +198,7 @@ def _rank_hierarchy(alternatives, hierarchy, criteria, data):
             result = _rank_hierarchy(alternatives, hierarchy, subcriteria[j],
                                      data)
             ranking[0, i] += (subcriteria_priority[j] * result[i])
+            #print(subcriteria_priority[j], result[i])
 
     return ranking[0]
     pass
@@ -277,4 +281,26 @@ def rank_form(server, title, method):
         results[:, i] = rank_hierarchy(alt, criterias, data, methods[method])
         i += 1
 
+    print(results)
     print(normalized_geometry_mean(results))
+
+
+def get_experts(server, title):
+    f_processor = create_proc(server)
+    answers = f_processor.ReadFormAnswer(title)
+    for (expert, result) in answers:
+        print(expert)
+
+
+def check_consistency(server, title, target_expert):
+    f_processor = create_proc(server)
+    answers = f_processor.ReadFormAnswer(title)
+    inconsistent = False
+    for (expert, result) in answers:
+        if expert == target_expert:
+            for (criteria, table) in result.items():
+                cons_index = consistency_index(table)
+                print(f"{criteria}: {cons_index}")
+                if cons_index > 0.1:
+                    inconsistent = True
+            print("Inconsistent") if inconsistent else print("Consistent")
