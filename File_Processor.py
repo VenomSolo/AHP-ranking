@@ -87,9 +87,9 @@ class File_Processor:
                 if found_title == title:
                     title_found = True
             position += 1
-        result = file_data[:start_position] + file_data[end_position:-1]
+        result = file_data[:start_position] + file_data[end_position:-1]+"\n"
         file = open(self.filename, "w")
-        file.write(result)
+        file.write(result.lstrip())
         file.close()
 
     def TakeForm(self, title):
@@ -232,10 +232,13 @@ if __name__ == '__main__':
     test_cat[0].add_sub("test1.2", 2)
     test_cat.append(Category("test2", 1))
     test_cat.append(Category("test3", 1))
-    # processor.AddForm("Bruh2",["a","b","bazinga"],test_cat)
-    #processor.RemoveForm("Bruh")
-    test_midman = Middleman.Categories_to_criterias(test_cat)
-    print(test_midman)
+    #processor.AddForm("Bruh",["a","b","bazinga"],test_cat)
+    processor.RemoveForm("Bruh")
+    processor.RemoveForm("Bruh2")
+    processor.RemoveForm("Example")
+    processor.AddForm("Example", ["a", "b", "bazinga"], test_cat)
+    # test_midman = Middleman.Categories_to_criterias(test_cat)
+    # print(test_midman)
 
     test_dict = OrderedDict()
     test_dict[("albania", 1)] = [("safety", 0.3), ("chill", 0.5),
