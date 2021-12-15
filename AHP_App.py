@@ -129,6 +129,9 @@ def normalized_eigenvector(comparison_matrix):
     w, v = np.linalg.eig(comparison_matrix)
     return normalize_vector(v[:, 0])
 
+def consistency_index(comparison_matrix):
+    w= np.linalg.eigvals(comparison_matrix)
+    return (max(w)-len(comparison_matrix))/(len(comparison_matrix)-1)
 
 def normalized_geometry_mean(comparison_matrix):
     alt_count = len(comparison_matrix)
