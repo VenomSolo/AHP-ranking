@@ -5,6 +5,8 @@ import os
 from enum import Enum
 import File_Processor as fp
 import Middleman as md
+import random
+import math
 
 from numpy.lib.index_tricks import nd_grid
 
@@ -135,6 +137,29 @@ def consistency_index(comparison_matrix):
     w = np.linalg.eigvals(comparison_matrix)
     return (max(w) - len(comparison_matrix)) / (len(comparison_matrix) - 1)
 
+def simulate_random_index(scale,matrix_size):
+    sim_size=50
+    sum_of_sim=0
+    for i in range(sim_size):
+        test_matrix=np.diag(np.ones(matrix_size))
+        for j in range(matrix_size):
+            for k in range(j+1,matrix_size):
+                test_matrix[j,k]=random.randrange(1,scale+1)
+                test_matrix[k,j]=1/test_matrix[j,k]
+        sum_of_sim+=consistency_index(test_matrix)
+    return sum_of_sim/sim_size
+
+def consistency_ratio(comparison_matrix):
+    return consistency_index(comparison_matrix)/simulate_random_index(np.amax(comparison_matrix),len(comparison_matrix))
+
+
+def geometric_consistency_index(comparison_matrix):
+    sum_of_e=0
+    alt_priorities=normalized_eigenvector(comparison_matrix)
+    for i in range(len(comparison_matrix)):
+        for j in range(i+1,len(comparison_matrix)):
+            sum_of_e+=math.log(comparison_matrix[i,j] * alt_priorities[j]/alt_priorities[i])**2
+    return (2/((len(comparison_matrix)-1)*(len(comparison_matrix)-2)))*sum_of_e
 
 def normalized_geometry_mean(comparison_matrix):
     alt_count = len(comparison_matrix)
