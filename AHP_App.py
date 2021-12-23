@@ -1,5 +1,6 @@
 from collections import OrderedDict
 import numpy as np
+from numpy.core.fromnumeric import shape
 from numpy.core.numeric import convolve
 import os
 from enum import Enum
@@ -10,6 +11,7 @@ import math
 
 from numpy.lib.index_tricks import nd_grid
 
+INF = 2e100
 clear = lambda: os.system('cls' if os.name == 'nt' else 'clear')
 
 criteria_matrixes = []
@@ -93,6 +95,14 @@ def create_hierarchy(criterias):
     return hierarchy
 
 
+def is_incomplete(matrix):
+    for row in matrix:
+        for val in row:
+            if val == INF:
+                return True
+    return False
+
+
 def ask_for_ACM(alternatives, criteria):
     alt_count = len(alternatives)
     acm = np.ones(shape=(alt_count, alt_count), dtype=float)
@@ -110,12 +120,14 @@ def ask_for_ACM(alternatives, criteria):
                     print(f"{alt1} VS {alt2}")
 
                     line = input(">>")
-                    if len(line) == 0: break
-
-                    val1, val2 = map(float, line.split(":"))
-                    val = val1 / val2
-                    acm[a1, a2] = val
-                    acm[a2, a1] = 1 / val
+                    if len(line) == 0:
+                        acm[a1, a2] = INF
+                        acm[a2, a1] = INF
+                    else:
+                        val1, val2 = map(float, line.split(":"))
+                        val = val1 / val2
+                        acm[a1, a2] = val
+                        acm[a2, a1] = 1 / val
                 except:
                     continue
                 break
@@ -125,6 +137,23 @@ def ask_for_ACM(alternatives, criteria):
 def ask_for_CCM(criterias):
     return ask_for_ACM(criterias, "criteria importance")
     pass
+
+
+def prepare_complete_auxilary_matrix(matrix):
+    if not is_incomplete(matrix):
+        return matrix
+    print(matrix)
+    l = len(matrix)
+    new_matrix = np.zeros(shape=(l, l), dtype=float)
+    for row in range(l):
+        for col in range(l):
+            val = matrix[row][col]
+            if val != INF:
+                new_matrix[row][col] += val
+            else:
+                new_matrix[row][row] += 1
+    print(new_matrix)
+    return new_matrix.tolist()
 
 
 def normalized_eigenvector(comparison_matrix):
@@ -137,29 +166,35 @@ def consistency_index(comparison_matrix):
     w = np.linalg.eigvals(comparison_matrix)
     return (max(w) - len(comparison_matrix)) / (len(comparison_matrix) - 1)
 
-def simulate_random_index(scale,matrix_size):
-    sim_size=50
-    sum_of_sim=0
+
+def simulate_random_index(scale, matrix_size):
+    sim_size = 50
+    sum_of_sim = 0
     for i in range(sim_size):
-        test_matrix=np.diag(np.ones(matrix_size))
+        test_matrix = np.diag(np.ones(matrix_size))
         for j in range(matrix_size):
-            for k in range(j+1,matrix_size):
-                test_matrix[j,k]=random.randrange(1,scale+1)
-                test_matrix[k,j]=1/test_matrix[j,k]
-        sum_of_sim+=consistency_index(test_matrix)
-    return sum_of_sim/sim_size
+            for k in range(j + 1, matrix_size):
+                test_matrix[j, k] = random.randrange(1, scale + 1)
+                test_matrix[k, j] = 1 / test_matrix[j, k]
+        sum_of_sim += consistency_index(test_matrix)
+    return sum_of_sim / sim_size
+
 
 def consistency_ratio(comparison_matrix):
-    return consistency_index(comparison_matrix)/simulate_random_index(np.amax(comparison_matrix),len(comparison_matrix))
+    return consistency_index(comparison_matrix) / simulate_random_index(
+        np.amax(comparison_matrix), len(comparison_matrix))
 
 
 def geometric_consistency_index(comparison_matrix):
-    sum_of_e=0
-    alt_priorities=normalized_eigenvector(comparison_matrix)
+    sum_of_e = 0
+    alt_priorities = normalized_eigenvector(comparison_matrix)
     for i in range(len(comparison_matrix)):
-        for j in range(i+1,len(comparison_matrix)):
-            sum_of_e+=math.log(comparison_matrix[i,j] * alt_priorities[j]/alt_priorities[i])**2
-    return (2/((len(comparison_matrix)-1)*(len(comparison_matrix)-2)))*sum_of_e
+        for j in range(i + 1, len(comparison_matrix)):
+            sum_of_e += math.log(comparison_matrix[i, j] * alt_priorities[j] /
+                                 alt_priorities[i])**2
+    return (2 / ((len(comparison_matrix) - 1) *
+                 (len(comparison_matrix) - 2))) * sum_of_e
+
 
 def normalized_geometry_mean(comparison_matrix):
     alt_count = len(comparison_matrix)
@@ -201,6 +236,7 @@ def gather_data(alternatives, hierarchy):
 
 def rank_data(data, method):
     for (criteria, result) in data.items():
+        result = prepare_complete_auxilary_matrix(result)
         if method == Method.EVM:
             data[criteria] = normalized_eigenvector(result)
         if method == Method.GMM:
