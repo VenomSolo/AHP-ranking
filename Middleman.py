@@ -1,4 +1,5 @@
 import File_Processor as fp
+from Category import Category
 import AHP_App as app
 
 
@@ -10,7 +11,7 @@ def criterias_to_Categories(hierarchy, criterias):
         depths[name] = depth
 
         if depth == 1:
-            cat = fp.Category(name, depth)
+            cat = Category(name, depth)
             Categories[name] = cat
 
     def add_sub(category, criteria):

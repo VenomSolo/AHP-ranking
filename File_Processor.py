@@ -1,58 +1,52 @@
+"""
+Ten moduł odpowiada za klasę File_Processor, która zajmuje się obsługą plików.
+"""
 from collections import OrderedDict
 import ast
+from Category import Category
 
-import Middleman
-
-
-class Category:
-    def __init__(self, name, depth):
-        self.cat_name = name
-        self.depth = depth
-        self.subcategories = []
-
-    def GetName(self):
-        return self.cat_name
-
-    def find_sub(self, name, depth):
-        if depth == self.depth + 1:
-            for sub_cat in self.subcategories:
-                if sub_cat.GetName() == name:
-                    return sub_cat
-        result = None
-        if depth > self.depth + 1:
-            for sub_cat in self.subcategories:
-                if not sub_cat.find_sub(name, depth) is None:
-                    return sub_cat
-
-        return None
-
-    def add_sub(self, name, depth):
-        if depth == self.depth + 1:
-            self.subcategories.append(Category(name, depth))
-        else:
-            self.subcategories[len(self.subcategories) - 1].add_sub(
-                name, depth)
-
-    def textify(self):
-        result = ""
-        for i in range(self.depth):
-            result += "#"
-
-        return result + self.cat_name
-
-    def __str__(self):
-        result = ""
-        result += self.textify() + "\n"
-        for sub_cat in self.subcategories:
-            result += sub_cat.__str__()
-        return result
 
 
 class File_Processor:
+    """
+    Klasa odpowiadająca za obsługę plików z informacjami o rankingu AHP.
+
+    Atrybuty:
+        filename: (str) nazwa pliku wejściowego z informacjami o rankingu.
+    Metody:
+        __init__(filename):
+            Konstruktor obiektu.
+        get_rest_of_line(position,data):
+            Pomocnicza metoda zwracająca string z danych od podanej pozycji do końca wiersza.
+        AddForm(title,alternatives,categories):
+            Metoda dodająca do pliku wejściowego podane dane rankingu AHP
+        RemoveForm(title):
+            Metoda usuwająca z pliku wejściowego dane dla rankingu AHP o podanej nazwie
+        TakeForm(title):
+            Zwraca alternatywy, oraz kryteria, dla rankingu o podanej nazwie
+        CheckForms():
+            Zwraca listę nazw rankinków w pliku wejściowym.
+        SendForm(title,expert_name,dict):
+            Wpisuje do pliku wynikowego dane o wynikach rankingu o podanej nazwie dla danego eksperta
+        ReadFormAnswer(title):
+            Zwraca odczytane z pliku wynikowego dane o wynikach rankingu o podanej nazwie.
+    """
     def __init__(self, filename):
+        """
+        Kontruktor tworzący obiekt FileProcessor
+
+        :param filename:(str) Nazwa/Ścieżka bezwzględna pliku wejściowego
+        """
         self.filename = filename
 
     def get_rest_of_line(self, position, data):
+        """
+        Pomocnicza metoda zbierająca tekst z danych, od pozycji początkowej do końca wiersza.
+
+        :param position: (int) pozycja początkowa
+        :param data: (str) dane, z których odczytujemy wiersz
+        :return: Zwraca resztę wiersza w result, oraz pozycję końcową w position
+        """
         result = ""
         while position < len(data) and data[position] != "\n":
             result += data[position]
@@ -60,6 +54,14 @@ class File_Processor:
         return result, position
 
     def AddForm(self, title, alternatives, categories):
+        """
+        Metoda dodająca do pliku wejściowego informacje o rankingu zgodnie z przyjętym formatem.
+
+        :param title: (str) Nazwa dodawanego rankingu
+        :param alternatives: (str[]) Lista nazw dodawanych alternatyw
+        :param categories: (Category[]) Lista dodawanych kategorii
+        :return: Nic nie zwraca
+        """
         file = open(self.filename, "a")
         file.write("!" + title + "\n")
         for alt in alternatives:
@@ -69,6 +71,12 @@ class File_Processor:
         file.close()
 
     def RemoveForm(self, title):
+        """
+        Metoda usuwająca dane rankingu o podanej nazwie z pliku wejściowego.
+
+        :param title: (str) Nazwa usuwanego rankingu
+        :return: Nic nie zwraca
+        """
         file = open(self.filename, "r")
         file_data = file.read(-1)
         file.close()
@@ -93,6 +101,12 @@ class File_Processor:
         file.close()
 
     def TakeForm(self, title):
+        """
+        Metoda zwracająca informacje o rankingu o podanej nazwie z pliku wejściowego.
+
+        :param title: (str) nazwa szukanego rankingu
+        :return: Zwraca listę alternatyw oraz kategorii
+        """
         file = open(self.filename, "r")
         file_data = file.read(-1)
         position = 0
@@ -136,6 +150,11 @@ class File_Processor:
         return (alternatives, categories)
 
     def CheckForms(self):
+        """
+        Metoda zwracająca wszystkie nazwy rankingów z pliku wejściowego.
+
+        :return: Zwraca listę nazw rankingów z pliku wejściowego
+        """
         file = open(self.filename)
         file_data = file.read(-1)
         position = 0
@@ -151,6 +170,15 @@ class File_Processor:
         return titles
 
     def SendForm(self, title, expert_name, dict):
+        """
+        Metoda zapisująca do pliku wyjściowego ([nazwa_rankingu]_result.txt) wynik rankingu dla
+        danego eksperta.
+
+        :param title: (str) nazwa rankingu AHP
+        :param expert_name: (str) nazwa eksperta, który tworzył ranking
+        :param dict: (dictionary) słownik z wynikami rankingu
+        :return: Nic nie zwraca
+        """
         file = open(title + "_result.txt", "a+")
         file.close()
 
@@ -182,6 +210,12 @@ class File_Processor:
         file.close()
 
     def ReadFormAnswer(self, title):
+        """
+        Metoda odczytująca odpowiedzi z pliku wyjściowego dla danego rankingu AHP.
+
+        :param title: (str) Nazwa rankingu AHP
+        :return: Zwraca listę z krotkami ([nazwa eksperta],[słownik z wynikami rankingu])
+        """
         file = open(title + "_result.txt", "r")
         file_data = file.read(-1)
         position = 0
