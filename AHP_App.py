@@ -44,6 +44,11 @@ def input_criteria():
     criterias = []
     clear()
     depth = 1
+    print("""End line with > to move deeper into hierarchy tree.
+    End line with < to return higher into hierarchy tree.
+    End line with | to stay on the same level in hierarchy tree.
+    End line with . to end defining hierarchy tree.
+    """)
     print("Podaj kryteria: ")
     while True:
         line = input(depth * "#")
@@ -116,8 +121,10 @@ def ask_for_ACM(alternatives, criteria):
             while True:
                 try:
                     clear()
-                    print(f"Kryterium: {criteria}")
-                    print(f"{alt1} VS {alt2}")
+                    print(f"Criteria: {criteria}")
+                    print(
+                        f"{alt1} VS {alt2} (leave input field empty and click enter to skip)"
+                    )
 
                     line = input(">>")
                     if len(line) == 0:
@@ -139,10 +146,9 @@ def ask_for_CCM(criterias):
     pass
 
 
-def prepare_complete_auxilary_matrix(matrix):
+def prepare_complete_auxilary_matrix_EVM(matrix):
     if not is_incomplete(matrix):
         return matrix
-    print(matrix)
     l = len(matrix)
     new_matrix = np.zeros(shape=(l, l), dtype=float)
     for row in range(l):
@@ -152,13 +158,42 @@ def prepare_complete_auxilary_matrix(matrix):
                 new_matrix[row][col] += val
             else:
                 new_matrix[row][row] += 1
-    print(new_matrix)
+
     return new_matrix.tolist()
+
+
+def normalized_geometry_mean_incomplete(matrix):
+    if not is_incomplete(matrix):
+        return matrix
+    l = len(matrix)
+
+    cprim = np.zeros(shape=(l, 1), dtype=float)
+
+    new_matrix = np.zeros(shape=(l, l), dtype=float)
+    for row in range(l):
+        for col in range(l):
+            val = matrix[row][col]
+            if val != INF:
+                new_matrix[row][col] += 0
+                cprim[row][0] += np.log(val)
+            else:
+                new_matrix[row][row] += 1
+                new_matrix[row][col] += 1
+
+    for row in range(l):
+        new_matrix[row][row] = l - new_matrix[row][row]
+
+    print("new matrix")
+    print(new_matrix)
+
+    vprim = np.linalg.solve(new_matrix, cprim)
+    rank = np.exp(vprim)
+
+    return normalize_vector(rank)
 
 
 def normalized_eigenvector(comparison_matrix):
     w, v = np.linalg.eig(comparison_matrix)
-    #print(v, v[:, 0])
     return normalize_vector(np.abs(v[:, 0]))
 
 
@@ -197,6 +232,8 @@ def geometric_consistency_index(comparison_matrix):
 
 
 def normalized_geometry_mean(comparison_matrix):
+    if is_incomplete(comparison_matrix):
+        return normalized_geometry_mean_incomplete(comparison_matrix)
     alt_count = len(comparison_matrix)
     ranking = np.ones(shape=(1, alt_count), dtype=complex)
     for row in range(alt_count):
@@ -236,8 +273,8 @@ def gather_data(alternatives, hierarchy):
 
 def rank_data(data, method):
     for (criteria, result) in data.items():
-        result = prepare_complete_auxilary_matrix(result)
         if method == Method.EVM:
+            result = prepare_complete_auxilary_matrix_EVM(result)
             data[criteria] = normalized_eigenvector(result)
         if method == Method.GMM:
             data[criteria] = normalized_geometry_mean(result)
@@ -313,9 +350,9 @@ def remove_form(server, title):
 def read_form(server, title):
     f_processor = create_proc(server)
     answers = f_processor.ReadFormAnswer(title)
-    # for (expert, result) in answers:
-    # print(expert + ":")
-    # print(result)
+    for (expert, result) in answers:
+        print(expert + ":")
+        print(result)
 
 
 def rank_form(server, title, method):
