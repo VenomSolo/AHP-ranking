@@ -3,6 +3,5 @@
 .idea
 AHP
 __pycache__
-*.txt
 *zip
 id_*

@@ -45,9 +45,9 @@ def input_criteria():
     clear()
     depth = 1
     print("""End line with > to move deeper into hierarchy tree.
-    End line with < to return higher into hierarchy tree.
-    End line with | to stay on the same level in hierarchy tree.
-    End line with . to end defining hierarchy tree.
+End line with < to return higher into hierarchy tree.
+End line with | to stay on the same level in hierarchy tree.
+End line with . to end defining hierarchy tree.
     """)
     print("Podaj kryteria: ")
     while True:
