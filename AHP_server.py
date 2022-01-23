@@ -67,7 +67,7 @@ def ListExperts(args):
 def CheckInconsistency(args):
     if not _check_arg_number(args, 2):
         return
-    AHP_App.check_consistency(server, args[0], args[1])
+    AHP_App.check_consistency(server, args[0], '$' + args[1])
 
 
 def AddForm(args):
@@ -85,7 +85,11 @@ def RemoveForm(args):
 def ReadForm(args):
     if not _check_arg_number(args, 1):
         return
-    AHP_App.read_form(server, args[0])
+    try:
+        AHP_App.read_form(server, args[0])
+    except FileNotFoundError:
+        print("Form results not found")
+        pass
 
 
 def RankForm(args):

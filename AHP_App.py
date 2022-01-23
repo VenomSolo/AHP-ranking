@@ -352,7 +352,10 @@ def read_form(server, title):
     answers = f_processor.ReadFormAnswer(title)
     for (expert, result) in answers:
         print(expert + ":")
-        print(result)
+        for (crit, matrix) in result.items():
+            print(crit[0] if crit[0] != '0' else "Root")
+            for row in matrix:
+                print(row)
 
 
 def rank_form(server, title, method):
@@ -379,8 +382,12 @@ def rank_form(server, title, method):
         results[:, i] = rank_hierarchy(alt, criterias, data, methods[method])
         i += 1
 
-    print(results)
-    print(normalized_geometry_mean(results))
+    results = normalized_geometry_mean(results)
+    i = 1
+    for (a, r) in reversed(sorted(list(zip(alt, results)),
+                                  key=lambda x: x[1])):
+        print(f"{i}. miejsce: {a} ({np.real(r)})")
+        i += 1
 
 
 def get_experts(server, title):
@@ -398,7 +405,8 @@ def check_consistency(server, title, target_expert):
         if expert == target_expert:
             for (criteria, table) in result.items():
                 cons_index = consistency_index(table)
-                print(f"{criteria}: {cons_index}")
+                crit = criteria[0] if criteria[0] != '0' else "Root"
+                print(f"{crit}: {np.real(cons_index)}")
                 if cons_index > 0.1:
                     inconsistent = True
             print("Inconsistent") if inconsistent else print("Consistent")
